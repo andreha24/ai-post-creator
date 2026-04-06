@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import "./globals.css";
 import { useForm, SubmitHandler, Controller } from "react-hook-form";
 import { CircularProgress, Switch } from "@mui/material";
 import TipsAndUpdatesIcon from "@mui/icons-material/TipsAndUpdates";

@@ -29,7 +29,9 @@ export default function Profile() {
   const searchParams = useSearchParams();
 
   const tabFromUrl = searchParams.get("tab");
-  const initialTab = TAB_VALUES.includes(tabFromUrl ?? "") ? tabFromUrl! : TAB_VALUES[0];
+  const initialTab = TAB_VALUES.includes(tabFromUrl ?? "")
+    ? tabFromUrl!
+    : TAB_VALUES[0];
 
   const [activeTab, setActiveTab] = useState(initialTab);
 
@@ -81,7 +83,10 @@ export default function Profile() {
         {TABS.map(({ value, icon }) => (
           <Tab
             key={value}
-            label={(value === "settings" ? t("profile.settings") : t("profile.history")).toUpperCase()}
+            label={(value === "settings"
+              ? t("profile.settings")
+              : t("profile.history")
+            ).toUpperCase()}
             value={value}
             icon={icon}
           />
