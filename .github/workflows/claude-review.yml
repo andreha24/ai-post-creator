@@ -20,3 +20,9 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          direct_prompt: |
+            Please review this pull request. Check for:
+            - bugs and logical errors
+            - code style and best practices
+            - potential performance issues
+            Leave comments on specific lines if you find issues.
