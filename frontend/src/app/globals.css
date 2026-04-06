@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@theme {
+  --color-secondary: #6d6d6d;
+}
+
+/* Theme tokens */
+:root {
+  --app-bg: #f0f8ff;
+  --app-fg: #0f172a;
+  --surface: #ffffff;
+  --surface-2: #f3f4f6;
+  --border: #d6d6d6;
+  --muted: #6d6d6d;
+  --muted-2: #94a3b8;
+}
+
+html[data-theme="dark"] {
+  --app-bg: #0b1220;
+  --app-fg: #e5e7eb;
+  --surface: #0f172a;
+  --surface-2: #111827;
+  --border: #24324a;
+  --muted: #a1a1aa;
+  --muted-2: #94a3b8;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--app-bg);
+  color: var(--app-fg);
+  /* height: 100%; */
+}
+
+* {
+  box-sizing: border-box;
+  font-size: 18px;
+}
+
+/* Small utility classes for themed surfaces */
+.app-surface {
+  background-color: var(--surface);
+  border-color: var(--border);
+}
+
+.app-surface-2 {
+  background-color: var(--surface-2);
+  border-color: var(--border);
+}
+
+.app-border {
+  border-color: var(--border) !important;
+}
+
+.app-muted {
+  color: var(--muted);
+}
