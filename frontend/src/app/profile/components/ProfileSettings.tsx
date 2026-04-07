@@ -107,8 +107,12 @@ export const ProfileSettings = () => {
           </div>
 
           <Select value={lang} onChange={handleChangeLang}>
-            <MenuItem value="en">{t("profileSettings.languageEnglish")}</MenuItem>
-            <MenuItem value="uk">{t("profileSettings.languageUkrainian")}</MenuItem>
+            <MenuItem value="en">
+              {t("profileSettings.languageEnglish")}
+            </MenuItem>
+            <MenuItem value="uk">
+              {t("profileSettings.languageUkrainian")}
+            </MenuItem>
           </Select>
         </div>
       </SettingBlockWrapper>

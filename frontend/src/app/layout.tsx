@@ -12,6 +12,7 @@ import { Toaster } from "react-hot-toast";
 import { applyTheme, getStoredTheme } from "@/utils/theme";
 import { syncI18nLanguageFromStorage } from "@/i18n/i18n";
 import usePostsStore from "@/store/usePostsStore";
+import "./globals.css"
 
 const oswald = Oswald({
   subsets: ["latin"],
