@@ -28,7 +28,7 @@ AI-POST-CREATOR/
 - UI primitives live in `src/ui/` (`Button.tsx`, `TextField.tsx`)
 - API calls go in `src/api/<resource>/<resource>.ts`
 - Global state in `src/store/` via Zustand (`useUserStore`, `usePostsStore`)
-- Translations in `src/i18n/resources.ts`; supported languages: `en`, `ua`; stored in `localStorage` under `lang`
+- Translations in `src/i18n/resources.ts`; supported languages: `en`, `uk`; stored in `localStorage` under `lang`
 - Toast notifications via `react-hot-toast` through `src/utils/alert.ts`
 - HTTP via axios instance in `src/utils/axios.ts`
 
@@ -189,4 +189,4 @@ frontend/src/app/<page>/components/       ← sub-components if needed
 ```
 
 **Add a translation key:**
-Add to both `en` and `ua` objects in `frontend/src/i18n/resources.ts`, then use via `const { t } = useTranslation()`.
+Add to both `en` and `uk` objects in `frontend/src/i18n/resources.ts`, then use via `const { t } = useTranslation()`.

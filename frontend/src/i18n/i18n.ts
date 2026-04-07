@@ -5,7 +5,7 @@ import { initReactI18next } from "react-i18next";
 import { resources, AppLanguage } from "./resources";
 
 export const defaultLanguage: AppLanguage = "en";
-export const supportedLanguages: AppLanguage[] = ["en", "ua"];
+export const supportedLanguages: AppLanguage[] = ["en", "uk"];
 
 function normalizeLang(value: string | null | undefined): AppLanguage {
   if (!value) return defaultLanguage;

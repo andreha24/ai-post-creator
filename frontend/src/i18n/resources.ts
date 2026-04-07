@@ -86,7 +86,7 @@ export const resources = {
       },
     },
   },
-  ua: {
+  uk: {
     translation: {
       appName: "AI Генератор Постів",
       common: {

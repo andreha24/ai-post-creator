@@ -110,7 +110,7 @@ export const ProfileSettings = () => {
             <MenuItem value="en">
               {t("profileSettings.languageEnglish")}
             </MenuItem>
-            <MenuItem value="ua">
+            <MenuItem value="uk">
               {t("profileSettings.languageUkrainian")}
             </MenuItem>
           </Select>
