@@ -83,6 +83,47 @@ export const login = async (data: LoginInput): Promise<AuthResponse> => {
   };
 };
 
+export const findOrCreateTwitterUser = async (
+  twitterId: string,
+  name?: string,
+  username?: string,
+): Promise<GoogleAuthResponse> => {
+  let isNewUser = false;
+
+  let user = await prisma.user.findFirst({
+    where: { twitterId },
+  });
+
+  if (!user) {
+    const placeholderEmail = `twitter_${twitterId}@placeholder.oauth`;
+
+    user = await prisma.user.create({
+      data: {
+        email: placeholderEmail,
+        twitterId,
+        name: name ?? username ?? null,
+      },
+    });
+    isNewUser = true;
+  } else if ((name || username) && user.name !== (name ?? username)) {
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: { name: name ?? username ?? user.name },
+    });
+  }
+
+  const token = generateToken({
+    userId: user.id,
+    email: user.email,
+  });
+
+  return {
+    user,
+    token,
+    isNewUser,
+  };
+};
+
 export const findOrCreateGoogleUser = async (
   googleId: string,
   email: string,

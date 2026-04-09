@@ -1,5 +1,11 @@
 import { FastifyInstance } from "fastify";
-import { registerHandler, loginHandler, googleOAuthHandler, logoutHandler } from "./auth.controller";
+import {
+  registerHandler,
+  loginHandler,
+  googleOAuthHandler,
+  twitterOAuthHandler,
+  logoutHandler,
+} from "./auth.controller";
 import { registerJsonSchema, loginJsonSchema } from "./auth.schema";
 
 export const authRoutes = async (fastify: FastifyInstance) => {
@@ -13,7 +19,7 @@ export const authRoutes = async (fastify: FastifyInstance) => {
         description: "Create a new user account with email and password",
       },
     },
-    registerHandler
+    registerHandler,
   );
 
   fastify.post(
@@ -26,7 +32,7 @@ export const authRoutes = async (fastify: FastifyInstance) => {
         description: "Authenticate user with email and password",
       },
     },
-    loginHandler
+    loginHandler,
   );
 
   fastify.get(
@@ -38,7 +44,19 @@ export const authRoutes = async (fastify: FastifyInstance) => {
         description: "Handle Google OAuth callback and authenticate user",
       },
     },
-    googleOAuthHandler
+    googleOAuthHandler,
+  );
+
+  fastify.get(
+    "/auth/twitter/callback",
+    {
+      schema: {
+        tags: ["auth"],
+        summary: "Twitter OAuth callback",
+        description: "Handle Twitter OAuth callback and authenticate user",
+      },
+    },
+    twitterOAuthHandler,
   );
 
   fastify.post(
@@ -50,6 +68,6 @@ export const authRoutes = async (fastify: FastifyInstance) => {
         description: "Clear authentication token",
       },
     },
-    logoutHandler
+    logoutHandler,
   );
 };

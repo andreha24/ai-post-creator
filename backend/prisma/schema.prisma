@@ -19,7 +19,8 @@ model User {
   email String @unique
   name String?
   password String?
-  googleId String? @unique @map("google_id")
+  googleId  String? @unique @map("google_id")
+  twitterId String? @unique @map("twitter_id")
   posts Post[]
 
   @@map("users")

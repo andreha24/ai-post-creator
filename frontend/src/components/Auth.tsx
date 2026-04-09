@@ -7,18 +7,33 @@ import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import LockIcon from "@mui/icons-material/Lock";
 import PersonIcon from "@mui/icons-material/Person";
 import { Button } from "@/ui/Button";
-import { GoogleButton } from "./GoogleButton";
+import { SocialButton } from "./SocialButton";
 import { usePathname, useRouter } from "next/navigation";
 import { loginUser, registerUser } from "@/api/auth/auth";
 import useUserStore from "@/store/useUserStore";
 import { notify } from "@/utils/alert";
 import { useTranslation } from "react-i18next";
+import GoogleIcon from "@mui/icons-material/Google";
+import TwitterIcon from "@mui/icons-material/Twitter";
 
 interface CreateUserSchema {
   email: string;
   name: string;
   password: string;
 }
+
+const SOCIAL_BUTTONS = [
+  {
+    label: "Google",
+    redirectLink: `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/google`,
+    icon: <GoogleIcon />,
+  },
+  {
+    label: "Twitter",
+    redirectLink: `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/twitter`,
+    icon: <TwitterIcon />,
+  },
+];
 
 export const Auth = () => {
   const { t } = useTranslation();
@@ -36,7 +51,9 @@ export const Auth = () => {
 
   const onSubmit: SubmitHandler<CreateUserSchema> = async (data) => {
     try {
-      const res = isLoginPage ? await loginUser(data) : await registerUser(data);
+      const res = isLoginPage
+        ? await loginUser(data)
+        : await registerUser(data);
       setUser(res);
       reset();
       notify({
@@ -66,15 +83,24 @@ export const Auth = () => {
 
       <div className="flex justify-between gap-10">
         <div className="flex flex-col">
-          <Image src="/futuristic.jpg" width={500} height={500} alt="futuristic" />
+          <Image
+            src="/futuristic.jpg"
+            width={500}
+            height={500}
+            alt="futuristic"
+          />
           <div></div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="min-w-[500px]">
           <div className="flex flex-col gap-2 !mb-4">
-            <h1 className="!text-2xl">{isLoginPage ? t("auth.welcomeBack") : t("auth.createAccount")}</h1>
+            <h1 className="!text-2xl">
+              {isLoginPage ? t("auth.welcomeBack") : t("auth.createAccount")}
+            </h1>
             <p className="text-secondary">
-              {isLoginPage ? t("auth.loginSubtitle") : t("auth.registerSubtitle")}
+              {isLoginPage
+                ? t("auth.loginSubtitle")
+                : t("auth.registerSubtitle")}
             </p>
           </div>
 
@@ -100,7 +126,11 @@ export const Auth = () => {
             <TextField
               label={t("auth.passwordLabel")}
               icon={<LockIcon />}
-              placeholder={isLoginPage ? t("auth.loginPasswordPlaceholder") : t("auth.registerPasswordPlaceholder")}
+              placeholder={
+                isLoginPage
+                  ? t("auth.loginPasswordPlaceholder")
+                  : t("auth.registerPasswordPlaceholder")
+              }
               registerName="password"
               register={register}
             />
@@ -117,7 +147,17 @@ export const Auth = () => {
               label={isLoginPage ? t("common.signIn") : t("common.signUp")}
               className="bg-blue-400 text-white"
             />
-            <GoogleButton />
+
+            <div>
+              {SOCIAL_BUTTONS.map(({ label, redirectLink, icon }) => (
+                <SocialButton
+                  key={label}
+                  label={label}
+                  redirectLink={redirectLink}
+                  icon={icon}
+                />
+              ))}
+            </div>
           </div>
         </form>
       </div>

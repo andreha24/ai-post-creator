@@ -42,7 +42,7 @@ export default function Profile() {
     } else {
       setActiveTab(TAB_VALUES[0]);
     }
-  }, []);
+  }, [searchParams]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
     const params = new URLSearchParams(searchParams.toString());
