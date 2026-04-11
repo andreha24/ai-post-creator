@@ -1,6 +1,12 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { register, login, findOrCreateGoogleUser } from "./auth.service";
+import {
+  register,
+  login,
+  findOrCreateGoogleUser,
+  findOrCreateTwitterUser,
+} from "./auth.service";
 import { RegisterInput, LoginInput } from "./auth.schema";
+import { env } from "prisma/config";
 
 interface GoogleUserInfo {
   id: string;
@@ -8,11 +14,20 @@ interface GoogleUserInfo {
   name?: string;
 }
 
+interface TwitterUserInfo {
+  data: {
+    id: string;
+    name: string;
+    username: string;
+    email?: string;
+  };
+}
+
 export const registerHandler = async (
   request: FastifyRequest<{
     Body: RegisterInput;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const { token, user } = await register(request.body);
@@ -38,7 +53,7 @@ export const loginHandler = async (
   request: FastifyRequest<{
     Body: LoginInput;
   }>,
-  reply: FastifyReply
+  reply: FastifyReply,
 ) => {
   try {
     const { token, user } = await login(request.body);
@@ -60,15 +75,24 @@ export const loginHandler = async (
   }
 };
 
-export const googleOAuthHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+export const googleOAuthHandler = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => {
   try {
-    const token = await request.server.googleOAuth2.getAccessTokenFromAuthorizationCodeFlow(request);
+    const token =
+      await request.server.googleOAuth2.getAccessTokenFromAuthorizationCodeFlow(
+        request,
+      );
 
-    const userInfoResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
-      headers: {
-        Authorization: `Bearer ${token.token.access_token}`,
+    const userInfoResponse = await fetch(
+      "https://www.googleapis.com/oauth2/v2/userinfo",
+      {
+        headers: {
+          Authorization: `Bearer ${token.token.access_token}`,
+        },
       },
-    });
+    );
 
     if (!userInfoResponse.ok) {
       throw new Error("Failed to fetch user info from Google");
@@ -76,7 +100,11 @@ export const googleOAuthHandler = async (request: FastifyRequest, reply: Fastify
 
     const googleUser = (await userInfoResponse.json()) as GoogleUserInfo;
 
-    const result = await findOrCreateGoogleUser(googleUser.id, googleUser.email, googleUser.name);
+    const result = await findOrCreateGoogleUser(
+      googleUser.id,
+      googleUser.email,
+      googleUser.name,
+    );
 
     reply.setCookie("token", result.token, {
       httpOnly: true,
@@ -86,7 +114,9 @@ export const googleOAuthHandler = async (request: FastifyRequest, reply: Fastify
       path: "/",
     });
 
-    return reply.redirect(`http://localhost:3000?auth=success${result.isNewUser ? "&new_user=true" : ""}`);
+    return reply.redirect(
+      `${env("FRONTEND_URL")}?auth=success${result.isNewUser ? "&new_user=true" : ""}`,
+    );
   } catch (error: any) {
     console.error("Google OAuth error:", error);
     return reply.code(500).send({
@@ -95,7 +125,60 @@ export const googleOAuthHandler = async (request: FastifyRequest, reply: Fastify
   }
 };
 
-export const logoutHandler = async (request: FastifyRequest, reply: FastifyReply) => {
+export const twitterOAuthHandler = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => {
+  try {
+    const token =
+      await request.server.twitterOAuth2.getAccessTokenFromAuthorizationCodeFlow(
+        request,
+      );
+
+    const userInfoResponse = await fetch(
+      "https://api.twitter.com/2/users/me?user.fields=id,name,username,email",
+      {
+        headers: {
+          Authorization: `Bearer ${token.token.access_token}`,
+        },
+      },
+    );
+
+    if (!userInfoResponse.ok) {
+      throw new Error("Failed to fetch user info from Twitter");
+    }
+
+    const twitterUser = (await userInfoResponse.json()) as TwitterUserInfo;
+
+    const result = await findOrCreateTwitterUser(
+      twitterUser.data.id,
+      twitterUser.data.name,
+      twitterUser.data.username,
+    );
+
+    reply.setCookie("token", result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: "/",
+    });
+
+    return reply.redirect(
+      `${env("FRONTEND_URL")}?auth=success${result.isNewUser ? "&new_user=true" : ""}`,
+    );
+  } catch (error: any) {
+    console.error("Twitter OAuth error:", error);
+    return reply.code(500).send({
+      error: error.message || "Twitter authentication failed",
+    });
+  }
+};
+
+export const logoutHandler = async (
+  request: FastifyRequest,
+  reply: FastifyReply,
+) => {
   reply.clearCookie("token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
