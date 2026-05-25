@@ -12,7 +12,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import CachedIcon from "@mui/icons-material/Cached";
 import { TextField } from "@/ui/TextField";
 import { createPost } from "@/api/posts/posts";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { Button } from "@/ui/Button";
 import { POST_SIZE, SOCIAL_PLATFORM } from "@/constants/constants";
 import { CreatePostInput, Post } from "@/types/post/post";
@@ -20,22 +20,29 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { notify } from "@/utils/alert";
 import { useTranslation } from "react-i18next";
 
-export default function Home() {
+// Отдельный компонент для useSearchParams
+function NewUserNotifier() {
   const { t } = useTranslation();
   const searchParams = useSearchParams();
   const router = useRouter();
 
   useEffect(() => {
     const isNewUser = searchParams.get("new_user");
-
     if (isNewUser) {
       notify({ text: t("home.registeredToast"), type: "success" });
       router.replace("/", { scroll: false });
     }
   }, [searchParams]);
 
+  return null;
+}
+
+export default function Home() {
+  const { t } = useTranslation();
   const [post, setPost] = useState<Post | null>(null);
-  const [postSettings, setPostSettings] = useState<CreatePostInput | null>(null);
+  const [postSettings, setPostSettings] = useState<CreatePostInput | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   const {
@@ -53,7 +60,6 @@ export default function Home() {
     try {
       setIsLoading(true);
       const res = await createPost(data);
-
       setPost(res);
     } catch (err) {
       throw new Error();
@@ -71,6 +77,10 @@ export default function Home() {
 
   return (
     <>
+      <Suspense fallback={null}>
+        <NewUserNotifier />
+      </Suspense>
+
       <h1 className="!text-4xl mb-5">{t("home.title")}</h1>
       <p className="mb-10">{t("home.subtitle")}</p>
 
@@ -82,15 +92,19 @@ export default function Home() {
         ) : post ? (
           <div className="max-w-[600px] flex flex-col gap-4">
             <div className="flex w-full flex-col border gap-5 pb-4">
-              <Image src={post.image} className="w-full" width={400} height={400} alt="AI image" />
+              <Image
+                src={post.image}
+                className="w-full"
+                width={400}
+                height={400}
+                alt="AI image"
+              />
               <h2 className="!text-xl px-4">{post.title}</h2>
-
               <div className="flex flex-col gap-2 px-4">
                 <span className="whitespace-pre-line">{post.text}</span>
                 <span className="text-blue-400">{post.tags}</span>
               </div>
             </div>
-
             <div className="flex gap-5 w-full">
               <Button
                 className="hover:bg-grey-200"
@@ -98,7 +112,6 @@ export default function Home() {
                 icon={<SettingsIcon color="primary" />}
                 onClick={() => setPost(null)}
               />
-
               <Button
                 className="hover:bg-grey-200"
                 label={t("home.regeneratePost")}
@@ -108,7 +121,10 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <form className="w-[600px] flex flex-col gap-8 pb-4" onSubmit={handleSubmit(onSubmit)}>
+          <form
+            className="w-[600px] flex flex-col gap-8 pb-4"
+            onSubmit={handleSubmit(onSubmit)}
+          >
             <TextField
               placeholder={t("home.form.topicPlaceholder")}
               icon={<TipsAndUpdatesIcon />}
@@ -116,7 +132,6 @@ export default function Home() {
               register={register}
               registerName="topic"
             />
-
             <TextField
               placeholder={t("home.form.socialMediaPlaceholder")}
               icon={<AutoAwesomeIcon />}
@@ -126,7 +141,6 @@ export default function Home() {
               register={register}
               registerName="socialMedia"
             />
-
             <TextField
               placeholder={t("home.form.postSizePlaceholder")}
               icon={<TipsAndUpdatesIcon />}
@@ -136,7 +150,6 @@ export default function Home() {
               register={register}
               registerName="size"
             />
-
             <TextField
               placeholder={t("home.form.postStylePlaceholder")}
               icon={<PaletteIcon />}
@@ -144,24 +157,24 @@ export default function Home() {
               register={register}
               registerName="style"
             />
-
             <div className="flex items-center justify-between">
               <div className="flex gap-4 items-center">
                 <TagIcon color="primary" />
-
                 <div className="flex flex-col gap-1">
                   <span>{t("home.form.includeHashtags")}</span>
-                  <span className="!text-sm text-secondary">{t("home.form.includeHashtagsHint")}</span>
+                  <span className="!text-sm text-secondary">
+                    {t("home.form.includeHashtagsHint")}
+                  </span>
                 </div>
               </div>
-
               <Controller
                 name="tags"
                 control={control}
-                render={({ field }) => <Switch checked={field.value} onChange={field.onChange} />}
+                render={({ field }) => (
+                  <Switch checked={field.value} onChange={field.onChange} />
+                )}
               />
             </div>
-
             <TextField
               placeholder={t("home.form.additionalPlaceholder")}
               icon={<AddIcon />}
@@ -169,7 +182,6 @@ export default function Home() {
               register={register}
               registerName="additionals"
             />
-
             <Button
               label={t("home.form.generatePost")}
               className="hover:bg-gray-200 transition-colors duration-300"
@@ -181,7 +193,12 @@ export default function Home() {
         )}
 
         <div className="h-fit sticky top-26 hidden lg:block min-w-[400px]">
-          <Image src="/colorfull-bg.png" width={400} height={400} alt="AI image" />
+          <Image
+            src="/colorfull-bg.png"
+            width={400}
+            height={400}
+            alt="AI image"
+          />
         </div>
       </div>
     </>

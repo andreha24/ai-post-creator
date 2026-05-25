@@ -116,7 +116,7 @@ export const createPost = async (data: CreatePostInput) => {
 
   try {
     const completion = await openRouter.chat.send({
-      model: "arcee-ai/trinity-large-preview:free",
+      model: "openrouter/owl-alpha",
       // model: "x-ai/grok-4.1-fast:free",
       messages: [
         {
