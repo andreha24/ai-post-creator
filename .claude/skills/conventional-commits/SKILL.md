@@ -2,12 +2,14 @@
 name: conventional-commits
 description: >-
   Write and create git commits that follow the Conventional Commits
-  specification (type(scope): description). Use this skill whenever the user
-  asks to commit changes, make a commit, save their work to git, or write a
-  commit message — even if they don't say the words "conventional commit." Also
+  specification (type(scope): description), and optionally push them to the
+  remote once the user approves. Use this skill whenever the user asks to commit
+  changes, make a commit, save their work to git, write a commit message, or
+  commit and push — even if they don't say the words "conventional commit." Also
   use it when the user wants help wording a commit, splitting work into commits,
   or fixing up a vague commit message. Trigger on phrases like "commit this,"
-  "commit my changes," "let's commit," "git commit," or "write a commit message."
+  "commit my changes," "commit and push," "let's commit," "git commit," or
+  "write a commit message."
 ---
 
 # Conventional Commits
@@ -50,12 +52,15 @@ When the user asks you to commit, work through these steps. Don't narrate every 
 
 7. **Stage and commit.** Stage the relevant files (`git add`) and create the commit. Then show the user the final message and confirm it landed (`git log -1 --stat` or report the short hash).
 
+8. **Offer to push — but only with the user's go-ahead.** A local commit is cheap to amend or undo; pushing publishes the work to the shared remote, where rewriting it disrupts anyone who already pulled. So treat pushing as a separate, deliberate step. After the commit lands, ask whether to push (e.g. *"Committed locally — want me to push to origin?"*) and push only once the user says yes. If their original request already asked to "commit and push," that **is** the approval — go straight to pushing, no second prompt needed. Push the branch you committed on with `git push`; if it has no upstream yet, set one with `git push -u origin <branch>`. Never push to the default branch directly, and never `--force` unless the user explicitly asks.
+
 ### Guardrails
 
 - **Only commit when asked.** This skill is for when the user wants a commit. Don't commit proactively after making edits unless they've told you to.
 - **Don't commit straight to the default branch.** If `git branch --show-current` reports `main`/`master`, create a topic branch first (named after the change, e.g. `feat/twitter-auth`) and commit there — unless the user explicitly wants the commit on the default branch.
 - **Respect any required trailer.** If the harness or repo convention requires a trailer (for example, Claude Code appends a `Co-Authored-By:` line), include it in the footer.
 - **Never use `--no-verify`** to skip hooks unless the user explicitly asks. If a pre-commit hook fails, fix the underlying issue or report it — don't bypass it.
+- **Pushing is opt-in (step 8).** Never push without the user's approval — an explicit "commit and push" request counts as approval. Push only the branch you committed on, never `--force` unless asked, and report what was pushed and to where.
 
 ## Type reference
 
