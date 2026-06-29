@@ -1,91 +1,91 @@
 ---
 name: create-pr
 description: >-
-  Push the current branch and open a GitHub pull request for it, end to end.
-  Use this skill whenever the user wants to create or open a PR, raise/submit a
-  pull request, push their branch and open a PR, or "put this up for review" —
+  Generate the complete text of a GitHub pull request — a Conventional-Commits
+  title plus a full description — ready to copy and paste, without pushing the
+  branch, running gh, committing, or creating anything on the remote. Use this
+  whenever the user wants to create or open a PR, raise/submit a pull request,
+  draft PR text, write up a branch for review, or "put this up for review" —
   even if they don't say the exact words "pull request." Trigger on phrases like
-  "open a PR," "create a PR," "make a pull request for this branch," "push and
-  open a PR," "submit this for review," or "raise a PR against main." This skill
-  handles the git push and PR creation; it delegates the PR body to the
+  "open a PR," "create a PR," "write the PR for this branch," "draft the PR
+  text," "PR description for this branch," or "submit this for review." This
+  skill only reads git state and produces text; it delegates the body to the
   pr-description skill.
 ---
 
-# Create PR
+# Create PR (text)
 
-Take the work on the current branch and turn it into an open pull request: make sure it's committed, push it, write a good title and body, and create the PR — falling back gracefully when the GitHub CLI isn't available.
+Turn the work on the current branch into copy-paste-ready pull-request text: a one-line title and a full description, derived from what actually changed since the base branch. The deliverable is the text in the conversation — the user takes it from here and opens the PR themselves.
 
-The goal is to get the user from "my changes are done" to "here's the PR link" in one move, without them having to remember the push incantation, hand-write the description, or click through GitHub's new-PR form. Two things make this reliable across machines: not assuming `gh` is installed, and reusing the team's existing PR-description format instead of inventing a new one each time.
+This skill never touches the remote. It doesn't push, commit, run `gh`, or build a URL — it only reads git state to understand the diff, then writes. That separation is the point: the user wants to review and place the text by hand, not have a PR created for them.
 
 ## Workflow
 
-Work through these in order. Don't narrate each step — do the work and report the result (the PR URL) at the end.
+Work through these in order. Don't narrate each step — gather what you need, then present the finished text.
 
-### 1. Make sure the work is on a topic branch
+### 1. Pick the base branch
 
-Run `git branch --show-current`. If it reports the default branch (`main` or `master`), you can't open a PR from it — there'd be nothing to compare. Create a topic branch first, named after the change (e.g. `feat/twitter-auth`), move the commits onto it, and continue from there. If the user explicitly wants to PR the default branch, surface the problem instead of guessing.
+The base is the branch you'd merge *into*; you need it to compute the diff the title and body describe. Detect the repo's default branch with `git symbolic-ref --short refs/remotes/origin/HEAD` (gives e.g. `origin/main` — strip the `origin/`). If that fails, fall back to `main`. Honor an explicit base if the user names one. If you genuinely can't determine it and the user didn't say, ask rather than guessing — describing a diff against the wrong base produces a wrong description.
 
-### 2. Make sure everything is committed
+Also check the current branch with `git branch --show-current`. If it *is* the base (e.g. you're sitting on `main`), there's nothing to compare and nothing to describe — say so and ask which branch or commit range to write up, instead of producing an empty PR description.
 
-Run `git status --porcelain`. If there are uncommitted changes, commit them first by following the **conventional-commits** skill — a PR should contain the work the user means to propose, and leaving changes behind on disk is a silent way to ship an incomplete PR. Once the tree is clean, move on.
+### 2. Read what changed
 
-### 3. Determine the base branch and repo
-
-- **Base branch**: the branch you're merging *into*. Default to the repo's default branch — detect it with `git symbolic-ref --short refs/remotes/origin/HEAD` (gives e.g. `origin/main`; strip the `origin/`). If that fails, fall back to `main`. Honor an explicit base if the user names one.
-- **Remote URL**: `git remote get-url origin`. You'll need it for the fallback URL. Both SSH (`git@github.com:owner/repo.git`) and HTTPS (`https://github.com/owner/repo.git`) forms are fine — the bundled script parses either.
-
-### 4. Push the branch
-
-If the branch has no upstream yet, set it: `git push -u origin <branch>`. If it already tracks a remote branch, a plain `git push` is enough. Push before creating the PR — GitHub needs the commits to exist on the remote.
-
-### 5. Write the title and body
-
-- **Title**: a single line summarizing the whole branch, in the same Conventional Commits style as the commits (e.g. `feat(auth): add Twitter OAuth login`). Derive it from the commits and diff since the base (`git log <base>..HEAD --oneline`, `git diff <base>...HEAD`), not from the branch name verbatim.
-- **Body**: generate it with the **pr-description** skill so the format stays consistent with the rest of the team's PRs (its `## What / ## Why / ## Changes / ## Testing` structure). Write the finished body to a temp file — routing multi-line text through a file avoids shell-quoting pain when you pass it to `gh`.
-
-### 6. Create the PR
-
-**If `gh` is installed** (check with `gh --version`), create it directly:
-
-```bash
-gh pr create --base <base> --head <branch> --title "<title>" --body-file <body-file>
-```
-
-Open it ready for review by default; add `--draft` only if the user asked for a draft. `gh` prints the PR URL — report it.
-
-**If `gh` is not installed**, fall back to a prefilled compare URL the user clicks to finish in the browser. The shape is:
+Look at both the commit list and the diff since the base:
 
 ```
-https://github.com/<owner>/<repo>/compare/<base>...<head>?expand=1&title=<url-encoded title>
+git log <base>..HEAD --oneline
+git diff <base>...HEAD
 ```
 
-Get `<owner>/<repo>` from `git remote get-url origin` (strip a trailing `.git`; works for both `git@github.com:owner/repo.git` and `https://github.com/owner/repo.git`). The title must be URL-encoded — `node` is available, so the reliable way is a one-liner:
+This is the raw material for the title and body. Note that this range only covers *committed* work. If `git status --porcelain` shows uncommitted changes that belong in the PR, they won't appear in the diff — flag that to the user (they may want to commit first) rather than silently writing a description that omits them.
 
-```bash
-node -p "encodeURIComponent('<title>')"
-```
+### 3. Write the title
 
-Assemble the URL with that encoded title and give it to the user — it opens GitHub's PR form with the title prefilled. GitHub's compare URL *can* also prefill the body via `&body=<url-encoded body>`, but bodies are often long enough to make the URL flaky, so the dependable move is to also paste the finished body into the conversation for them to drop into the form. (The compare flow always opens a normal, non-draft PR — there's no draft query param — so mention that if they wanted a draft.)
+A single line summarizing the whole branch, in the same Conventional Commits style as the commits (e.g. `feat(auth): add Twitter OAuth login`). Derive it from the commits and the diff, not from the branch name verbatim — the branch name is often a shorthand, while the title should read as a clear summary of the change.
 
-### 7. Report
+### 4. Write the body
 
-Tell the user what happened in one or two lines: the branch you pushed, the base it targets, and the PR URL (or the compare URL to click). That link is the whole point of the skill — make it the headline, not a footnote.
+Generate the body with the **pr-description** skill, so the format stays consistent with the rest of the team's PRs (its `## What / ## Why / ## Changes / ## Testing` structure). Keeping a single source of truth for the body format is why this skill delegates rather than reinventing the sections.
+
+### 5. Present the text
+
+Output the title and body together as plain text the user can drop straight into GitHub's new-PR form. The whole deliverable is this text — so make it easy to copy in one go. Put the title on its own line and the body right below it; a single fenced block around the lot keeps the markdown verbatim (so the `##` headers paste as headers, not as rendered text).
+
+Don't write it to a temp file, don't run any git or `gh` command, and don't assemble a compare URL. If, after seeing the text, the user wants the branch actually pushed and the PR opened, that's a separate step they can ask for.
 
 ## Guardrails
 
-- **Only push and create when asked.** This skill is the ask — but don't also push unrelated branches or force-push. A normal `git push` only; never `--force` unless the user explicitly requests it.
-- **Don't skip hooks.** No `--no-verify` on the commit/push steps unless the user says so. If a pre-push hook fails, report it rather than bypassing.
-- **Don't invent a base.** If the default branch can't be detected and the user didn't specify one, ask rather than assuming `main` is correct for an unusual repo.
-- **Respect required commit trailers** when committing in step 2 (the conventional-commits skill handles this).
+- **Text only, no side effects.** This skill reads git state and writes text — nothing else. Never push, commit, run `gh`, or open a URL, even as a convenience. The user chose a text-only flow on purpose.
+- **Don't invent a base.** If the default branch can't be detected and the user didn't specify one, ask.
+- **Don't describe work that isn't there.** Flag an empty range or uncommitted changes instead of producing a description that's misleading about what the PR contains.
 
 ## Example
 
-User: *"ok push this and open a PR"* on branch `feat/social-auth` with a clean tree, `gh` not installed.
+User on branch `feat/social-auth`: *"write the PR for this branch."*
 
-1. On a topic branch, tree clean → skip commit step.
-2. Base = `main`, remote = `git@github.com:andreha24/ai-post-creator.git`.
-3. `git push -u origin feat/social-auth`.
-4. Title: `feat(auth): add social login buttons`. Body via pr-description → temp file.
-5. No `gh` → encode the title (`node -p "encodeURIComponent('feat(auth): add social login buttons')"`) and assemble
-   `https://github.com/andreha24/ai-post-creator/compare/main...feat/social-auth?expand=1&title=feat%28auth%29%3A%20add%20social%20login%20buttons`
-6. Report: "Pushed `feat/social-auth` → base `main`. Open the PR here: <url> (title is prefilled)." — and paste the body for them to drop into the form.
+1. Base = `main` (detected via `origin/HEAD`). Current branch is `feat/social-auth` — good, there's a diff to describe.
+2. `git log main..HEAD --oneline` and `git diff main...HEAD` to see the change.
+3. Title: `feat(auth): add social login buttons`.
+4. Body via the pr-description skill.
+5. Present it as one copyable block:
+
+````
+feat(auth): add social login buttons
+
+## What
+Add Google and Twitter login buttons to the sign-in screen.
+
+## Why
+Users asked for one-click sign-in; password-only onboarding was dropping off.
+
+## Changes
+- New `SocialAuthButtons` component wired into the login form
+- OAuth callback routes for Google and Twitter
+- DB migration adding `provider` and `provider_id` to `users`
+
+## Testing
+`npm test`, then sign in with each provider locally and confirm a user row is created.
+````
+
+Then: "That's the full PR text — copy it into GitHub's new-PR form. Want me to push the branch and open the PR for you too?"
