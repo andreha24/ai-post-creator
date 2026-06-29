@@ -1,4 +1,4 @@
-const BASIC_URL = "http://localhost:5000/api";
+const BASIC_URL = `${process.env.NEXT_PUBLIC_BACKEND_URL}` || "http://localhost:5000/api";
 
 export const endpoints = {
   // auth
