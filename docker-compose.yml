@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:17
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -18,7 +18,7 @@ services:
 
   backend:
     build: ./backend
-    restart: always
+    restart: unless-stopped
     ports:
       - "5000:5000"
     volumes:
@@ -35,7 +35,7 @@ services:
 
   frontend:
     build: ./frontend
-    restart: always
+    restart: unless-stopped
     ports:
       - "3000:3000"
     volumes:
@@ -43,6 +43,9 @@ services:
       - /app/node_modules
       - /app/.next
     environment:
+      # Used by Next.js server-side (SSR, server actions) — resolves via Docker internal network
+      API_URL: http://backend:5000/api
+      # Used by the browser — resolves via the exposed port on the host machine
       NEXT_PUBLIC_API_URL: http://localhost:5000
       NEXT_PUBLIC_BACKEND_URL: http://localhost:5000/api
       WATCHPACK_POLLING: "true"

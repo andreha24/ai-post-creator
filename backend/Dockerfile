@@ -9,11 +9,11 @@ RUN chown nodejs:nodejs /app
 
 USER nodejs
 
+RUN mkdir -p src/generated
+
 COPY --chown=nodejs:nodejs package.json package-lock.json ./
-RUN npm install
+RUN npm ci
 
 COPY --chown=nodejs:nodejs . .
 
-RUN npx prisma generate
-
-CMD ["sh", "-c", "npx prisma migrate deploy && npm run dev"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && npm run dev"]

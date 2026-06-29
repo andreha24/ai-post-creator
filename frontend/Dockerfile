@@ -5,18 +5,19 @@ WORKDIR /app
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nextjs -u 1001 -G nodejs
 
-# Сразу выдать права на рабочую папку
 RUN chown nextjs:nodejs /app
 
 USER nextjs
 
+RUN mkdir -p .next
+
 COPY --chown=nextjs:nodejs package.json package-lock.json ./
-RUN npm install
+RUN npm ci
 
 COPY --chown=nextjs:nodejs . .
 
-RUN npm run build
-
 CMD ["npm", "run", "dev"]
 
-# CMD ["npm", "start"] - for prod
+# For production: remove volume mounts from compose and switch to:
+# RUN npm run build
+# CMD ["npm", "start"]
